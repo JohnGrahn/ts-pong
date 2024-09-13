@@ -22,6 +22,8 @@ export class Game {
     this.ai = new AI(this.aiPaddle, this.ball, this);
 
     this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+    this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
+    this.canvas.addEventListener('touchstart', this.handleTouchMove.bind(this));
 
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas());
@@ -72,6 +74,14 @@ export class Game {
     const rect = this.canvas.getBoundingClientRect();
     const mouseY = event.clientY - rect.top;
     this.playerPaddle.setY(mouseY - this.playerPaddle.height / 2);
+  }
+
+  private handleTouchMove(event: TouchEvent) {
+    event.preventDefault();
+    const rect = this.canvas.getBoundingClientRect();
+    const touch = event.touches[0];
+    const touchY = touch.clientY - rect.top;
+    this.playerPaddle.setY(touchY - this.playerPaddle.height / 2);
   }
 
   start() {
