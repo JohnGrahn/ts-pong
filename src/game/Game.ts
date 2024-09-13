@@ -16,12 +16,56 @@ export class Game {
     this.canvas.width = 800;
     this.canvas.height = 400;
 
-    this.playerPaddle = new Paddle(30, this.canvas.height / 2 - 40, 10, 80);
-    this.aiPaddle = new Paddle(this.canvas.width - 40, this.canvas.height / 2 - 40, 10, 80);
-    this.ball = new Ball(this.canvas.width / 2, this.canvas.height / 2, 10);
-    this.ai = new AI(this.aiPaddle, this.ball);
+    this.playerPaddle = new Paddle(30, this.canvas.height / 2 - 40, 10, 80, this);
+    this.aiPaddle = new Paddle(this.canvas.width - 40, this.canvas.height / 2 - 40, 10, 80, this);
+    this.ball = new Ball(this.canvas.width / 2, this.canvas.height / 2, 10, this);
+    this.ai = new AI(this.aiPaddle, this.ball, this);
 
     this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+
+    this.resizeCanvas();
+    window.addEventListener('resize', () => this.resizeCanvas());
+  }
+
+  public get canvasWidth(): number {
+    return this.canvas.width;
+  }
+
+  public get canvasHeight(): number {
+    return this.canvas.height;
+  }
+
+  private resizeCanvas() {
+    const containerWidth = this.canvas.parentElement?.clientWidth || window.innerWidth;
+    const containerHeight = this.canvas.parentElement?.clientHeight || window.innerHeight;
+    const aspectRatio = 16 / 9;
+
+    if (containerWidth / containerHeight > aspectRatio) {
+      this.canvas.height = containerHeight;
+      this.canvas.width = containerHeight * aspectRatio;
+    } else {
+      this.canvas.width = containerWidth;
+      this.canvas.height = containerWidth / aspectRatio;
+    }
+
+    // Update game objects with new sizes
+    this.updateGameObjects();
+  }
+
+  private updateGameObjects() {
+    const paddleWidth = this.canvasWidth * 0.02;
+    const paddleHeight = this.canvasHeight * 0.15;
+
+    this.playerPaddle.updateSize(paddleWidth, paddleHeight);
+    this.playerPaddle.setPosition(paddleWidth, (this.canvasHeight - paddleHeight) / 2);
+
+    this.aiPaddle.updateSize(paddleWidth, paddleHeight);
+    this.aiPaddle.setPosition(this.canvasWidth - paddleWidth * 2, (this.canvasHeight - paddleHeight) / 2);
+
+    this.ball.updateSize(this.canvasWidth * 0.02, this.canvasWidth * 0.02);
+    this.ball.reset();
+
+    this.ai.updateSpeed();
   }
 
   private handleMouseMove(event: MouseEvent) {
@@ -41,7 +85,7 @@ export class Game {
   }
 
   private update() {
-    this.ball.update(this.canvas.width, this.canvas.height);
+    this.ball.update();
     this.ai.update();
     this.checkCollisions();
   }
