@@ -2,6 +2,7 @@ import { Paddle } from './Paddle';
 import { Ball } from './Ball';
 import { AI } from './AI';
 import { Menu } from './Menu';
+import { InGameMenu } from './InGameMenu';
 
 export class Game {
   private canvas: HTMLCanvasElement;
@@ -13,6 +14,12 @@ export class Game {
   private orientationMessage: HTMLDivElement;
   private menu: Menu;
   private isGameRunning: boolean = false;
+  private inGameMenu: InGameMenu;
+  private isPaused: boolean = false;
+  private isFullscreen: boolean = false;
+  private playerScore: number = 0;
+  private aiScore: number = 0;
+  private maxScore: number = 5; // Game ends when a player reaches this score
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -69,6 +76,7 @@ export class Game {
     this.canvas.addEventListener('touchstart', this.handleTouchMove.bind(this));
 
     this.resizeCanvas(); // Initial call to ensure correct setup on load
+    this.inGameMenu = new InGameMenu(this);
   }
 
   public get canvasWidth(): number {
@@ -130,16 +138,24 @@ export class Game {
 
   start() {
     if (!this.isGameRunning) {
+      this.resetGame();
       this.isGameRunning = true;
+      this.isPaused = false;
+      this.canvas.style.display = 'block';
       this.requestLandscapeOrientation();
+      this.inGameMenu.show();
       this.gameLoop();
     }
   }
 
   private gameLoop() {
-    this.update();
-    this.draw();
-    requestAnimationFrame(this.gameLoop.bind(this));
+    if (this.isGameRunning) {
+      if (!this.isPaused) {
+        this.update();
+        this.draw();
+      }
+      requestAnimationFrame(this.gameLoop.bind(this));
+    }
   }
 
   private update() {
@@ -152,6 +168,14 @@ export class Game {
     if (this.ball.checkPaddleCollision(this.playerPaddle) || 
         this.ball.checkPaddleCollision(this.aiPaddle)) {
       this.ball.reverseX();
+    }
+
+    if (this.ball.ballX - this.ball.radius < 0) {
+      this.updateScore('ai');
+      this.ball.reset();
+    } else if (this.ball.ballX + this.ball.radius > this.canvasWidth) {
+      this.updateScore('player');
+      this.ball.reset();
     }
   }
 
@@ -171,6 +195,13 @@ export class Game {
     this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
     this.ctx.strokeStyle = 'white';
     this.ctx.stroke();
+
+    // Draw scores
+    this.ctx.font = '32px Arial';
+    this.ctx.fillStyle = 'white';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText(`${this.playerScore}`, this.canvasWidth * 0.25, 50);
+    this.ctx.fillText(`${this.aiScore}`, this.canvasWidth * 0.75, 50);
   }
 
   private requestLandscapeOrientation() {
@@ -181,8 +212,84 @@ export class Game {
     }
   }
 
+  public requestFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch((err) => {
+        console.error('Error attempting to enable fullscreen:', err);
+      });
+    } else if (elem.mozRequestFullScreen) { // Firefox
+      elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) { // Chrome, Safari and Opera
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { // IE/Edge
+      elem.msRequestFullscreen();
+    }
+  }
+
   showMenu() {
     this.isGameRunning = false;
+    this.inGameMenu.hide();
     this.menu.show();
+    this.canvas.style.display = 'none';
+  }
+
+  togglePause() {
+    this.isPaused = !this.isPaused;
+    if (this.isPaused) {
+      this.inGameMenu.showPauseMenu();
+    } else {
+      this.inGameMenu.hidePauseMenu();
+    }
+  }
+
+  endGame() {
+    this.isGameRunning = false;
+    this.inGameMenu.hide();
+    const winner = this.playerScore > this.aiScore ? 'Player' : 'AI';
+    alert(`Game Over! ${winner} wins with a score of ${Math.max(this.playerScore, this.aiScore)}-${Math.min(this.playerScore, this.aiScore)}`);
+    this.resetGame();
+    this.showMenu();
+  }
+
+  toggleFullscreen() {
+    if (!this.isFullscreen) {
+      this.requestFullscreen();
+    } else {
+      this.exitFullscreen();
+    }
+    this.isFullscreen = !this.isFullscreen;
+  }
+
+  private exitFullscreen() {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  }
+
+  private updateScore(player: 'player' | 'ai') {
+    if (player === 'player') {
+      this.playerScore++;
+    } else {
+      this.aiScore++;
+    }
+
+    if (this.playerScore >= this.maxScore || this.aiScore >= this.maxScore) {
+      this.endGame();
+    }
+  }
+
+  private resetGame() {
+    this.playerScore = 0;
+    this.aiScore = 0;
+    this.ball.reset();
+    this.playerPaddle.setPosition(30, this.canvas.height / 2 - 40);
+    this.aiPaddle.setPosition(this.canvas.width - 40, this.canvas.height / 2 - 40);
   }
 }

@@ -47,9 +47,7 @@ export class Ball {
       this.dy = -this.dy;
     }
 
-    if (this.x - this.radius < 0 || this.x + this.radius > this.game.canvasWidth) {
-      this.reset();
-    }
+    // Remove the reset from here, as it's handled in the Game class
   }
 
   reverseX() {
@@ -74,5 +72,13 @@ export class Ball {
 
   public get ballY(): number {
     return this.y;
+  }
+
+  public get ballX(): number {
+    return this.x;
+  }
+
+  public reverseY() {
+    this.dy = -this.dy;
   }
 }

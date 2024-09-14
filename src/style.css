@@ -13,6 +13,28 @@ body {
   display: block;
   width: 100vw;
   height: 100vh;
+  object-fit: contain;
+}
+
+/* Fullscreen styles */
+#gameCanvas:fullscreen {
+  width: 100vw;
+  height: 100vh;
+}
+
+#gameCanvas:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+}
+
+#gameCanvas:-moz-full-screen {
+  width: 100vw;
+  height: 100vh;
+}
+
+#gameCanvas:-ms-fullscreen {
+  width: 100vw;
+  height: 100vh;
 }
 
 #game-container {
