@@ -16,7 +16,7 @@ export class Ball {
   ) {
     this.width = radius * 2;
     this.height = radius * 2;
-    this.baseSpeed = this.game.canvasWidth * 0.005; // 0.5% of canvas width
+    this.baseSpeed = Math.min(this.game.canvasWidth, this.game.canvasHeight) * 0.005;
     this.resetSpeed();
   }
 
