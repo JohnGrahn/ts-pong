@@ -1,8 +1,11 @@
 import { Paddle } from './Paddle';
 import { Ball } from './Ball';
 import { AI } from './AI';
-import { Menu } from './Menu';
-import { InGameMenu } from './InGameMenu';
+import { Menu } from '../components/Menu';
+import { InGameMenu } from '../components/InGameMenu';
+import { ScoreManager } from './ScoreManager';
+import { CollisionManager } from './CollisionManager';
+import { Renderer } from './Renderer';
 
 export class Game {
   private canvas: HTMLCanvasElement;
@@ -17,9 +20,9 @@ export class Game {
   private inGameMenu: InGameMenu;
   private isPaused: boolean = false;
   private isFullscreen: boolean = false;
-  private playerScore: number = 0;
-  private aiScore: number = 0;
-  private maxScore: number = 5; // Game ends when a player reaches this score
+  private scoreManager: ScoreManager;
+  private collisionManager: CollisionManager;
+  private renderer: Renderer;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -77,6 +80,10 @@ export class Game {
 
     this.resizeCanvas(); // Initial call to ensure correct setup on load
     this.inGameMenu = new InGameMenu(this);
+
+    this.scoreManager = new ScoreManager();
+    this.collisionManager = new CollisionManager(this.ball, this.playerPaddle, this.aiPaddle);
+    this.renderer = new Renderer(this);
   }
 
   public get canvasWidth(): number {
@@ -161,47 +168,19 @@ export class Game {
   private update() {
     this.ball.update();
     this.ai.update();
-    this.checkCollisions();
-  }
-
-  private checkCollisions() {
-    if (this.ball.checkPaddleCollision(this.playerPaddle) || 
-        this.ball.checkPaddleCollision(this.aiPaddle)) {
-      this.ball.reverseX();
-    }
-
-    if (this.ball.ballX - this.ball.radius < 0) {
-      this.updateScore('ai');
-      this.ball.reset();
-    } else if (this.ball.ballX + this.ball.radius > this.canvasWidth) {
-      this.updateScore('player');
-      this.ball.reset();
+    const collisionResult = this.collisionManager.checkCollisions();
+    if (collisionResult !== 'none') {
+      const isGameOver = this.scoreManager.updateScore(collisionResult);
+      if (isGameOver) {
+        this.endGame();
+      } else {
+        this.ball.reset();
+      }
     }
   }
 
   private draw() {
-    this.ctx.fillStyle = 'black';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-    this.ctx.fillStyle = 'white';
-    this.playerPaddle.draw(this.ctx);
-    this.aiPaddle.draw(this.ctx);
-    this.ball.draw(this.ctx);
-
-    // Draw center line
-    this.ctx.setLineDash([5, 15]);
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.canvas.width / 2, 0);
-    this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
-    this.ctx.strokeStyle = 'white';
-    this.ctx.stroke();
-
-    // Draw scores
-    this.ctx.font = '32px Arial';
-    this.ctx.fillStyle = 'white';
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText(`${this.playerScore}`, this.canvasWidth * 0.25, 50);
-    this.ctx.fillText(`${this.aiScore}`, this.canvasWidth * 0.75, 50);
+    this.renderer.draw();
   }
 
   private requestLandscapeOrientation() {
@@ -246,8 +225,9 @@ export class Game {
   endGame() {
     this.isGameRunning = false;
     this.inGameMenu.hide();
-    const winner = this.playerScore > this.aiScore ? 'Player' : 'AI';
-    alert(`Game Over! ${winner} wins with a score of ${Math.max(this.playerScore, this.aiScore)}-${Math.min(this.playerScore, this.aiScore)}`);
+    const scores = this.scoreManager.getScores();
+    const winner = scores.player > scores.ai ? 'Player' : 'AI';
+    alert(`Game Over! ${winner} wins with a score of ${Math.max(scores.player, scores.ai)}-${Math.min(scores.player, scores.ai)}`);
     this.resetGame();
     this.showMenu();
   }
@@ -273,23 +253,34 @@ export class Game {
     }
   }
 
-  private updateScore(player: 'player' | 'ai') {
-    if (player === 'player') {
-      this.playerScore++;
-    } else {
-      this.aiScore++;
-    }
-
-    if (this.playerScore >= this.maxScore || this.aiScore >= this.maxScore) {
-      this.endGame();
-    }
-  }
-
   private resetGame() {
-    this.playerScore = 0;
-    this.aiScore = 0;
+    this.scoreManager.reset();
     this.ball.reset();
     this.playerPaddle.setPosition(30, this.canvas.height / 2 - 40);
     this.aiPaddle.setPosition(this.canvas.width - 40, this.canvas.height / 2 - 40);
+  }
+
+  public getCtx(): CanvasRenderingContext2D {
+    return this.ctx;
+  }
+
+  public getCanvas(): HTMLCanvasElement {
+    return this.canvas;
+  }
+
+  public getPlayerPaddle(): Paddle {
+    return this.playerPaddle;
+  }
+
+  public getAiPaddle(): Paddle {
+    return this.aiPaddle;
+  }
+
+  public getBall(): Ball {
+    return this.ball;
+  }
+
+  public getScoreManager(): ScoreManager {
+    return this.scoreManager;
   }
 }

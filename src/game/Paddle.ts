@@ -43,4 +43,8 @@ export class Paddle {
   moveDown() {
     this.setY(this.y + this.speed);
   }
+
+  public getCanvasWidth(): number {
+    return this.game.canvasWidth;
+  }
 }
