@@ -235,10 +235,14 @@ export class Game {
     this.isGameRunning = false;
     this.canvas.style.display = 'block';
     this.renderer.drawGameOverScreen(winner, playerScore, aiScore);
-    this.canvas.addEventListener('click', this.handleGameOverClick, { once: true });
+    this.canvas.addEventListener('click', this.handleGameOverInteraction);
+    this.canvas.addEventListener('touchstart', this.handleGameOverInteraction);
   }
 
-  private handleGameOverClick = () => {
+  private handleGameOverInteraction = (event: MouseEvent | TouchEvent) => {
+    event.preventDefault();
+    this.canvas.removeEventListener('click', this.handleGameOverInteraction);
+    this.canvas.removeEventListener('touchstart', this.handleGameOverInteraction);
     this.resetGame();
     this.showMenu();
   };
