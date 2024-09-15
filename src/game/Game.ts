@@ -227,10 +227,21 @@ export class Game {
     this.inGameMenu.hide();
     const scores = this.scoreManager.getScores();
     const winner = scores.player > scores.ai ? 'Player' : 'AI';
-    alert(`Game Over! ${winner} wins with a score of ${Math.max(scores.player, scores.ai)}-${Math.min(scores.player, scores.ai)}`);
+    this.showGameOverScreen(winner, scores.player, scores.ai);
+  }
+
+  private showGameOverScreen(winner: string, playerScore: number, aiScore: number) {
+    this.isPaused = true;
+    this.isGameRunning = false;
+    this.canvas.style.display = 'block';
+    this.renderer.drawGameOverScreen(winner, playerScore, aiScore);
+    this.canvas.addEventListener('click', this.handleGameOverClick, { once: true });
+  }
+
+  private handleGameOverClick = () => {
     this.resetGame();
     this.showMenu();
-  }
+  };
 
   toggleFullscreen() {
     if (!this.isFullscreen) {
@@ -282,5 +293,15 @@ export class Game {
 
   public getScoreManager(): ScoreManager {
     return this.scoreManager;
+  }
+
+  public toggleMenu() {
+    this.inGameMenu.toggleMenu();
+  }
+
+  
+
+  public getGameRunningStatus(): boolean {
+    return this.isGameRunning;
   }
 }
