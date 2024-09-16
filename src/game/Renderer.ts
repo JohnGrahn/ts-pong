@@ -23,6 +23,11 @@ export class Renderer {
         // Draw scores
         this.drawScores();
 
+        // Draw countdown if counting down
+        if (this.game.getCountdownStatus()) {
+            this.drawCountdown(this.game.getCountdownTimer());
+        }
+
         // Draw game-over screen if the game is not running
         if (!this.game.getGameRunningStatus()) {
             const scores = this.game.getScoreManager().getScores();
@@ -83,5 +88,19 @@ export class Renderer {
         // Draw instruction text
         ctx.font = '18px Arial';
         ctx.fillText('Click anywhere to return to the main menu', canvas.width / 2, canvas.height / 2 + 120);
+    }
+
+    drawCountdown(countdown: number): void {
+        const ctx = this.game.getCtx();
+        const canvas = this.game.getCanvas();
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'white';
+        ctx.font = '64px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(countdown.toString(), canvas.width / 2, canvas.height / 2);
     }
 }

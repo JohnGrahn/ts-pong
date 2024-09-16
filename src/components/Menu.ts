@@ -23,7 +23,7 @@ export class Menu {
     `;
 
     const title = document.createElement('h1');
-    title.textContent = 'Pong AI Game';
+    title.textContent = 'Pong';
     this.menuElement.appendChild(title);
 
     const playButton = document.createElement('button');

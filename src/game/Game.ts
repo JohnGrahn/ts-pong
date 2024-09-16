@@ -23,6 +23,8 @@ export class Game {
   private scoreManager: ScoreManager;
   private collisionManager: CollisionManager;
   private renderer: Renderer;
+  private countdownTimer: number = 5;
+  private isCountingDown: boolean = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -151,14 +153,34 @@ export class Game {
       this.canvas.style.display = 'block';
       this.requestLandscapeOrientation();
       this.inGameMenu.show();
-      this.gameLoop();
+      this.startCountdown();
+    }
+  }
+
+  private startCountdown() {
+    this.isCountingDown = true;
+    this.countdownTimer = 5;
+    this.gameLoop();
+    this.updateCountdown();
+  }
+
+  private updateCountdown() {
+    if (this.countdownTimer > 0) {
+      setTimeout(() => {
+        this.countdownTimer--;
+        this.updateCountdown();
+      }, 1000);
+    } else {
+      this.isCountingDown = false;
     }
   }
 
   private gameLoop() {
     if (this.isGameRunning) {
       if (!this.isPaused) {
-        this.update();
+        if (!this.isCountingDown) {
+          this.update();
+        }
         this.draw();
       }
       requestAnimationFrame(this.gameLoop.bind(this));
@@ -303,9 +325,15 @@ export class Game {
     this.inGameMenu.toggleMenu();
   }
 
-  
-
   public getGameRunningStatus(): boolean {
     return this.isGameRunning;
+  }
+
+  public getCountdownStatus(): boolean {
+    return this.isCountingDown;
+  }
+
+  public getCountdownTimer(): number {
+    return this.countdownTimer;
   }
 }
