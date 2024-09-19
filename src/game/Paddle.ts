@@ -2,49 +2,73 @@ import { Game } from './Game';
 
 export class Paddle {
   private speed!: number;
+  public normalizedY: number;
 
   constructor(
-    public x: number,
-    public y: number,
-    public width: number,
-    public height: number,
+    public normalizedX: number,
+    normalizedY: number,
+    public normalizedWidth: number,
+    public normalizedHeight: number,
     private game: Game
   ) {
     this.updateSpeed();
+    this.normalizedY = normalizedY;
+    this.setNormalizedY(normalizedY);
   }
 
-  updateSize(width: number, height: number) {
-    this.width = width;
-    this.height = height;
+  updateSize(normalizedWidth: number, normalizedHeight: number) {
+    this.normalizedWidth = normalizedWidth;
+    this.normalizedHeight = normalizedHeight;
     this.updateSpeed();
   }
 
   updateSpeed() {
-    this.speed = this.game.canvasHeight * 0.01; // 1% of canvas height
+    this.speed = 0.01; // 1% of the field per frame
+  }
+
+  setNormalizedY(normalizedY: number) {
+    this.normalizedY = Math.max(0, Math.min(normalizedY, 1 - this.normalizedHeight));
   }
 
   setY(y: number) {
-    this.y = Math.max(0, Math.min(y, this.game.canvasHeight - this.height));
+    this.setNormalizedY(y / this.game.canvasHeight);
   }
 
-  setPosition(x: number, y: number) {
-    this.x = x;
-    this.y = y;
+  setPosition(normalizedX: number, normalizedY: number) {
+    this.normalizedX = normalizedX;
+    this.setNormalizedY(normalizedY);
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    const x = this.normalizedX * this.game.canvasWidth;
+    const y = this.normalizedY * this.game.canvasHeight;
+    const width = this.normalizedWidth * this.game.canvasWidth;
+    const height = this.normalizedHeight * this.game.canvasHeight;
+    console.log(`Drawing paddle at (${x}, ${y}) with size ${width}x${height}`);
+    ctx.fillRect(x, y, width, height);
   }
 
   moveUp() {
-    this.setY(this.y - this.speed);
+    this.setNormalizedY(this.normalizedY - this.speed);
   }
 
   moveDown() {
-    this.setY(this.y + this.speed);
+    this.setNormalizedY(this.normalizedY + this.speed);
   }
 
-  public getCanvasWidth(): number {
-    return this.game.canvasWidth;
+  public get x(): number {
+    return this.normalizedX * this.game.canvasWidth;
+  }
+
+  public get y(): number {
+    return this.normalizedY * this.game.canvasHeight;
+  }
+
+  public get width(): number {
+    return this.normalizedWidth * this.game.canvasWidth;
+  }
+
+  public get height(): number {
+    return this.normalizedHeight * this.game.canvasHeight;
   }
 }

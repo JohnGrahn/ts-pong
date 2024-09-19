@@ -5,8 +5,8 @@ export class Ball {
   private dx: number = 0;
   private dy: number = 0;
   private baseSpeed: number;
-  private width: number;
-  private height: number;
+  public normalizedX: number;
+  public normalizedY: number;
 
   constructor(
     private x: number,
@@ -14,17 +14,14 @@ export class Ball {
     public radius: number,
     private game: Game
   ) {
-    this.width = radius * 2;
-    this.height = radius * 2;
-    this.baseSpeed = Math.min(this.game.canvasWidth, this.game.canvasHeight) * 0.005;
+    this.baseSpeed = 0.005; // 0.5% of the field per frame
+    this.normalizedX = x / game.canvasWidth;
+    this.normalizedY = y / game.canvasHeight;
     this.resetSpeed();
   }
 
   updateSize(width: number, height: number) {
-    this.width = width;
-    this.height = height;
     this.radius = Math.min(width, height) / 2;
-    this.baseSpeed = this.game.canvasWidth * 0.005; // Update speed when resizing
     this.resetSpeed();
   }
 
@@ -34,32 +31,34 @@ export class Ball {
   }
 
   reset() {
-    this.x = this.game.canvasWidth / 2 - this.width / 2;
-    this.y = this.game.canvasHeight / 2 - this.height / 2;
+    this.normalizedX = 0.5;
+    this.normalizedY = 0.5;
     this.resetSpeed();
   }
 
   update() {
-    this.x += this.dx;
-    this.y += this.dy;
+    this.normalizedX += this.dx;
+    this.normalizedY += this.dy;
 
-    if (this.y - this.radius < 0 || this.y + this.radius > this.game.canvasHeight) {
+    if (this.normalizedY < 0 || this.normalizedY > 1) {
       this.dy = -this.dy;
     }
 
-    // Remove the reset from here, as it's handled in the Game class
-  }
-
-  reverseX() {
-    this.dx = -this.dx;
+    this.x = this.normalizedX * this.game.canvasWidth;
+    this.y = this.normalizedY * this.game.canvasHeight;
   }
 
   checkPaddleCollision(paddle: Paddle): boolean {
+    const paddleNormalizedX = paddle.x / this.game.canvasWidth;
+    const paddleNormalizedY = paddle.y / this.game.canvasHeight;
+    const paddleNormalizedWidth = paddle.width / this.game.canvasWidth;
+    const paddleNormalizedHeight = paddle.height / this.game.canvasHeight;
+
     return (
-      this.x - this.radius < paddle.x + paddle.width &&
-      this.x + this.radius > paddle.x &&
-      this.y - this.radius < paddle.y + paddle.height &&
-      this.y + this.radius > paddle.y
+      this.normalizedX - this.radius / this.game.canvasWidth < paddleNormalizedX + paddleNormalizedWidth &&
+      this.normalizedX + this.radius / this.game.canvasWidth > paddleNormalizedX &&
+      this.normalizedY - this.radius / this.game.canvasHeight < paddleNormalizedY + paddleNormalizedHeight &&
+      this.normalizedY + this.radius / this.game.canvasHeight > paddleNormalizedY
     );
   }
 
@@ -80,5 +79,24 @@ export class Ball {
 
   public reverseY() {
     this.dy = -this.dy;
+  }
+
+  public reverseX() {
+    this.dx = -this.dx;
+  }
+
+  public setNormalizedPosition(x: number, y: number) {
+    this.normalizedX = x;
+    this.normalizedY = y;
+    this.x = this.normalizedX * this.game.canvasWidth;
+    this.y = this.normalizedY * this.game.canvasHeight;
+  }
+
+  public getCanvasWidth(): number {
+    return this.game.canvasWidth;
+  }
+
+  public getCanvasHeight(): number {
+    return this.game.canvasHeight;
   }
 }

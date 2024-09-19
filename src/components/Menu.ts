@@ -48,6 +48,17 @@ export class Menu {
     fullscreenButton.addEventListener('click', () => this.game.requestFullscreen());
     this.menuElement.appendChild(fullscreenButton);
 
+    const multiplayerButton = document.createElement('button');
+    multiplayerButton.textContent = 'Multiplayer';
+    multiplayerButton.style.cssText = `
+      font-size: 20px;
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+    `;
+    multiplayerButton.addEventListener('click', () => this.startMultiplayerGame());
+    this.menuElement.appendChild(multiplayerButton);
+
     document.body.appendChild(this.menuElement);
   }
 
@@ -61,6 +72,11 @@ export class Menu {
 
   private startGame() {
     this.hide();
-    this.game.start();
+    this.game.startGame();
+  }
+
+  private startMultiplayerGame() {
+    this.hide();
+    this.game.startMultiplayerGame();
   }
 }

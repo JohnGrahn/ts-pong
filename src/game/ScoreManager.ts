@@ -24,4 +24,22 @@ export class ScoreManager {
         this.playerScore = 0;
         this.aiScore = 0;
     }
+
+    setScores(player1: number, player2: number): void {
+        this.playerScore = player1;
+        this.aiScore = player2;
+    }
+
+    setMaxScore(maxScore: number): void {
+        this.maxScore = maxScore;
+    }
+
+    incrementScore(scorer: 'player' | 'ai'): void {
+        if (scorer === 'player') {
+            this.playerScore++;
+        } else {
+            this.aiScore++;
+        }
+        console.log(`Score updated: Player ${this.playerScore} - AI ${this.aiScore}`);
+    }
 }

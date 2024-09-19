@@ -13,8 +13,11 @@ export class Renderer {
 
         // Draw game objects
         ctx.fillStyle = 'white';
+        console.log('Drawing player paddle');
         this.game.getPlayerPaddle().draw(ctx);
-        this.game.getAiPaddle().draw(ctx);
+        console.log('Drawing opponent paddle');
+        this.game.getOpponentPaddle().draw(ctx);
+        console.log('Drawing ball');
         this.game.getBall().draw(ctx);
 
         // Draw center line
