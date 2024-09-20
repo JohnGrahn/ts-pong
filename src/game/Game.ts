@@ -425,7 +425,7 @@ export class Game {
 
   public startMultiplayerGame() {
     this.isMultiplayer = true;
-    this.socket = io('http://localhost:3000');
+    this.socket = io(window.location.origin);
     this.setupSocketListeners();
     this.socket.emit('joinGame', {
       canvasWidth: this.canvasWidth,
