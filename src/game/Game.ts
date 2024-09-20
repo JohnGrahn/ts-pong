@@ -474,10 +474,10 @@ export class Game {
       }
     });
 
-    this.socket.on('gameOver', (data: { winner: string; scores: { player1: number; player2: number } }) => {
-      this.endGame();
-      // Optionally display the winner and final scores
-    });
+    //this.socket.on('gameOver', (data: { winner: string; scores: { player1: number; player2: number } }) => {
+    //  this.endGame();
+    //  // Optionally display the winner and final scores
+    //});
 
     this.socket.on('opponentDisconnected', () => {
       console.log('Opponent disconnected');

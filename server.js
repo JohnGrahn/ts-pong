@@ -1,64 +1,122 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var express_1 = require("express");
-var http_1 = require("http");
-var socket_io_1 = require("socket.io");
-var path_1 = require("path");
-var app = (0, express_1.default)();
-var httpServer = (0, http_1.createServer)(app);
-var io = new socket_io_1.Server(httpServer);
-var PORT = process.env.PORT || 3000;
-app.use(express_1.default.static(path_1.default.join(__dirname, 'dist')));
-var gameRooms = new Map();
-io.on('connection', function (socket) {
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer);
+const PORT = process.env.PORT || 3000;
+console.log('Serving static files from:', path.join(__dirname, 'dist'));
+app.use(express.static(path.join(__dirname, 'dist')));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+const gameRooms = new Map();
+io.on('connection', (socket) => {
     console.log('A user connected');
-    socket.on('joinGame', function () {
-        var roomToJoin = null;
-        for (var _i = 0, _a = gameRooms.entries(); _i < _a.length; _i++) {
-            var _b = _a[_i], roomId = _b[0], room_1 = _b[1];
-            if (room_1.players.length < 2) {
+    socket.on('joinGame', () => {
+        let roomToJoin = null;
+        for (const [roomId, room] of gameRooms.entries()) {
+            if (room.players.length < 2) {
                 roomToJoin = roomId;
                 break;
             }
         }
         if (!roomToJoin) {
-            roomToJoin = "room_".concat(Date.now());
+            roomToJoin = `room_${Date.now()}`;
             gameRooms.set(roomToJoin, {
                 players: [],
                 ballPosition: { x: 400, y: 300 },
                 scores: { player1: 0, player2: 0 },
+                lastScoredAt: 0, // Initialize
             });
         }
-        var room = gameRooms.get(roomToJoin);
+        const room = gameRooms.get(roomToJoin);
         room.players.push(socket);
         socket.join(roomToJoin);
         if (room.players.length === 2) {
-            io.to(roomToJoin).emit('gameStart', { roomId: roomToJoin, players: room.players.map(function (p) { return p.id; }) });
+            io.to(roomToJoin).emit('gameStart', { roomId: roomToJoin, players: room.players.map(p => p.id) });
         }
         socket.emit('waitingForOpponent');
     });
-    socket.on('paddleMove', function (data) {
-        socket.to(data.roomId).emit('opponentPaddleMove', { y: data.y });
+    socket.on('collision', (data) => {
+        const room = gameRooms.get(data.roomId);
+        if (room) {
+            // Identify Player 1's socket ID
+            const player1SocketId = room.players[0].id;
+            if (socket.id !== player1SocketId) {
+                console.log(`Collision event from non-authoritative socket ${socket.id} ignored.`);
+                return;
+            }
+            const now = Date.now();
+            // Prevent processing multiple collisions within 1 second
+            if (now - room.lastScoredAt < 1000) {
+                console.log('Duplicate collision event ignored.');
+                return;
+            }
+            room.lastScoredAt = now;
+            if (data.scorer === 'player') {
+                room.scores.player1++;
+                console.log(`Player 1 scored. New score: ${room.scores.player1} - ${room.scores.player2}`);
+            }
+            else {
+                // Assuming 'ai' is replaced with 'player2' in multiplayer
+                room.scores.player2++;
+                console.log(`Player 2 scored. New score: ${room.scores.player1} - ${room.scores.player2}`);
+            }
+            io.to(data.roomId).emit('scoreUpdate', room.scores);
+            // Check for game over
+            if (room.scores.player1 >= 5 || room.scores.player2 >= 5) {
+                const winner = room.scores.player1 > room.scores.player2 ? 'Player 1' : 'Player 2';
+                io.to(data.roomId).emit('gameOver', { winner, scores: room.scores });
+                // Optionally reset or delete the room
+            }
+        }
     });
-    socket.on('ballMove', function (data) {
-        var room = gameRooms.get(data.roomId);
+    socket.on('paddleMove', (data) => {
+        socket.to(data.roomId).emit('opponentPaddleMove', { normalizedY: data.normalizedY });
+    });
+    socket.on('ballMove', (data) => {
+        const room = gameRooms.get(data.roomId);
         if (room) {
             room.ballPosition = { x: data.x, y: data.y };
             socket.to(data.roomId).emit('ballUpdate', { x: data.x, y: data.y });
         }
     });
-    socket.on('updateScore', function (data) {
-        var room = gameRooms.get(data.roomId);
+    socket.on('ballReset', (data) => {
+        const room = gameRooms.get(data.roomId);
+        if (room) {
+            room.ballPosition = { x: data.x, y: data.y };
+            socket.to(data.roomId).emit('ballReset', { x: data.x, y: data.y });
+        }
+    });
+    socket.on('updateScore', (data) => {
+        const room = gameRooms.get(data.roomId);
         if (room) {
             room.scores = { player1: data.player1, player2: data.player2 };
             io.to(data.roomId).emit('scoreUpdate', room.scores);
         }
     });
-    socket.on('disconnect', function () {
+    socket.on('goalScored', (data) => {
+        const room = gameRooms.get(data.roomId);
+        if (room) {
+            if (data.scorer === 'player') {
+                room.scores.player1++;
+            }
+            else {
+                room.scores.player2++;
+            }
+            io.to(data.roomId).emit('scoreUpdate', room.scores);
+        }
+    });
+    socket.on('disconnect', () => {
         console.log('A user disconnected');
-        for (var _i = 0, _a = gameRooms.entries(); _i < _a.length; _i++) {
-            var _b = _a[_i], roomId = _b[0], room = _b[1];
-            var index = room.players.indexOf(socket);
+        for (const [roomId, room] of gameRooms.entries()) {
+            const index = room.players.indexOf(socket);
             if (index !== -1) {
                 room.players.splice(index, 1);
                 if (room.players.length === 0) {
@@ -72,6 +130,6 @@ io.on('connection', function (socket) {
         }
     });
 });
-httpServer.listen(PORT, function () {
-    console.log("Server is running on port ".concat(PORT));
+httpServer.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });

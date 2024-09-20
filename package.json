@@ -2,8 +2,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:server": "tsc -p tsconfig.server.json && mv dist/server.js .",
     "preview": "vite preview",
-    "start:server": "node --loader ts-node/esm server.ts"
+    "start:server": "node dist/server.js"
   },
   "name": "ts-pong",
   "version": "1.0.0",
