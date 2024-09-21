@@ -449,10 +449,7 @@ export class Game {
     this.isMultiplayer = true;
     this.socket = io(window.location.origin);
     this.setupSocketListeners();
-    this.socket.emit('joinGame', {
-      canvasWidth: this.canvasWidth,
-      canvasHeight: this.canvasHeight
-    });
+    this.socket.emit('joinGame');
   }
 
   private setupSocketListeners() {
@@ -460,15 +457,15 @@ export class Game {
 
     this.socket.on('waitingForOpponent', () => {
       console.log('Waiting for an opponent...');
-      // Show waiting message on the screen
+      this.showWaitingScreen();
     });
 
     this.socket.on('gameStart', (data: { roomId: string; players: string[] }) => {
+      console.log('Game starting:', data);
+      this.hideWaitingScreen();
       this.roomId = data.roomId;
       this.playerId = this.socket!.id === data.players[0] ? 1 : 2;
-      if (this.playerId === 2) {
-        this.controlledPaddle = this.opponentPaddle;
-      }
+      this.controlledPaddle = this.playerId === 1 ? this.playerPaddle : this.opponentPaddle;
       this.startGame();
     });
 
@@ -495,7 +492,6 @@ export class Game {
         this.endGame();
       }
     });
-
     //this.socket.on('gameOver', (data: { winner: string; scores: { player1: number; player2: number } }) => {
     //  this.endGame();
     //  // Optionally display the winner and final scores
@@ -517,5 +513,33 @@ export class Game {
     this.controlledPaddle = this.playerPaddle;
     this.resetGame();
     this.ai = new AI(this.opponentPaddle, this.ball, this);
+  }
+
+  private showWaitingScreen() {
+    const waitingScreen = document.createElement('div');
+    waitingScreen.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      z-index: 2000;
+    `;
+    waitingScreen.textContent = 'Waiting for an opponent...';
+    waitingScreen.id = 'waiting-screen';
+    document.body.appendChild(waitingScreen);
+  }
+
+  private hideWaitingScreen() {
+    const waitingScreen = document.getElementById('waiting-screen');
+    if (waitingScreen) {
+      waitingScreen.remove();
+    }
   }
 }

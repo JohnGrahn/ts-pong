@@ -56,7 +56,7 @@ io.on('connection', (socket: Socket) => {
         players: [],
         ballPosition: { x: 400, y: 300 },
         scores: { player1: 0, player2: 0 },
-        lastScoredAt: 0, // Initialize
+        lastScoredAt: 0,
       });
     }
 
@@ -64,11 +64,11 @@ io.on('connection', (socket: Socket) => {
     room.players.push(socket);
     socket.join(roomToJoin);
 
-    if (room.players.length === 2) {
+    if (room.players.length === 1) {
+      socket.emit('waitingForOpponent');
+    } else if (room.players.length === 2) {
       io.to(roomToJoin).emit('gameStart', { roomId: roomToJoin, players: room.players.map(p => p.id) });
     }
-
-    socket.emit('waitingForOpponent');
   });
 
   socket.on('collision', (data: { roomId: string; scorer: 'player' | 'ai' }) => {
