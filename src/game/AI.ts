@@ -10,7 +10,7 @@ export class AI {
   }
 
   updateSpeed() {
-    this.speed = this.game.canvasHeight * 0.004; // 0.5% of canvas height
+    this.speed = this.game.canvasHeight * 0.00475; // 0.5% of canvas height
   }
 
   update() {

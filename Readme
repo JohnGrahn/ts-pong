@@ -1,0 +1,9 @@
+Build server 
+npm run build:server
+
+Dev
+npm run dev
+
+Docker
+podman build -t ts-pong .
+podman run -d -p 3000:3000 ts-pong

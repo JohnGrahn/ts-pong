@@ -229,8 +229,30 @@ export class Game {
     if (!this.isMultiplayer) {
         this.ball.update();
         this.ai.update();
+
+        // Handle collisions locally in single-player
+        const collisionResult = this.collisionManager.checkCollisions();
+        if (collisionResult !== 'none') {
+            console.log(`Collision detected: ${collisionResult}`);
+            this.isScoring = true;
+            if (collisionResult === 'player') {
+                this.scoreManager.incrementScore('player');
+            } else {
+                this.scoreManager.incrementScore('ai');
+            }
+
+            if (this.scoreManager.isGameOver()) {
+                this.endGame();
+            } else {
+                this.ball.reset();
+                // Reset the scoring flag after a short delay
+                setTimeout(() => {
+                    this.isScoring = false;
+                }, 1000);
+            }
+        }
     } else {
-        // In multiplayer, only update the ball position if we're player 1
+        // Multiplayer mode
         if (this.playerId === 1) {
             this.ball.update();
             if (this.socket && this.roomId) {
@@ -240,41 +262,41 @@ export class Game {
                     y: this.ball.normalizedY,
                 });
             }
-        }
-    }
 
-    // Only Player 1 should handle collision detection
-    if (this.playerId === 1 && !this.isScoring) {
-        const collisionResult = this.collisionManager.checkCollisions();
-        if (collisionResult !== 'none') {
-            console.log(`Collision detected: ${collisionResult}`);
-            this.isScoring = true;
-            if (this.isMultiplayer && this.socket && this.roomId) {
-                // In multiplayer, only Player 1 sends collision events to the server
-                this.socket.emit('collision', {
-                    roomId: this.roomId,
-                    scorer: collisionResult
-                });
-            } else {
-                // In single player, update score locally
-                this.scoreManager.incrementScore(collisionResult);
-            }
-            
-            if (this.scoreManager.isGameOver()) {
-                this.endGame();
-            } else {
-                this.ball.reset();
-                if (this.isMultiplayer && this.socket && this.roomId && this.playerId === 1) {
-                    this.socket.emit('ballReset', {
-                        roomId: this.roomId,
-                        x: this.ball.normalizedX,
-                        y: this.ball.normalizedY,
-                    });
+            // Only Player 1 should handle collision detection
+            if (!this.isScoring) {
+                const collisionResult = this.collisionManager.checkCollisions();
+                if (collisionResult !== 'none') {
+                    console.log(`Collision detected: ${collisionResult}`);
+                    this.isScoring = true;
+                    if (this.isMultiplayer && this.socket && this.roomId) {
+                        // In multiplayer, only Player 1 sends collision events to the server
+                        this.socket.emit('collision', {
+                            roomId: this.roomId,
+                            scorer: collisionResult
+                        });
+                    } else {
+                        // In single player, update score locally
+                        this.scoreManager.incrementScore(collisionResult);
+                    }
+
+                    if (this.scoreManager.isGameOver()) {
+                        this.endGame();
+                    } else {
+                        this.ball.reset();
+                        if (this.isMultiplayer && this.socket && this.roomId && this.playerId === 1) {
+                            this.socket.emit('ballReset', {
+                                roomId: this.roomId,
+                                x: this.ball.normalizedX,
+                                y: this.ball.normalizedY,
+                            });
+                        }
+                        // Reset the scoring flag after a short delay
+                        setTimeout(() => {
+                            this.isScoring = false;
+                        }, 1000);
+                    }
                 }
-                // Reset the scoring flag after a short delay
-                setTimeout(() => {
-                    this.isScoring = false;
-                }, 1000);
             }
         }
     }
