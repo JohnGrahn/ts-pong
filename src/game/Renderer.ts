@@ -105,5 +105,12 @@ export class Renderer {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(countdown.toString(), canvas.width / 2, canvas.height / 2);
+
+        if (this.game.getIsMultiplayer()) {
+            const playerNumber = this.game.getPlayerNumber();
+            const playerText = `You are Player ${playerNumber} (${playerNumber === 1 ? 'Left' : 'Right'})`;
+            ctx.font = '32px Arial';
+            ctx.fillText(playerText, canvas.width / 2, canvas.height / 2 + 80);
+        }
     }
 }

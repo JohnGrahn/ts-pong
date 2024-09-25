@@ -84,6 +84,7 @@ export class MultiplayerManager {
       this.roomId = data.roomId;
       const playerId = this.socket!.id === data.players[0] ? 1 : 2;
       this.game['playerId'] = playerId; // Update the playerId in the Game instance
+      this.game.setPlayerNumber(playerId);
       const controlledPaddle = playerId === 1 ? this.game.getPlayerPaddle() : this.game.getOpponentPaddle();
       this.game.setControlledPaddle(controlledPaddle);
       this.game.startGame();

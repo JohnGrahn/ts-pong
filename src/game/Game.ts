@@ -31,6 +31,7 @@ export class Game {
   private controlledPaddle: Paddle;
   private isScoring: boolean = false;
   private multiplayerManager: MultiplayerManager;
+  private playerNumber: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -452,5 +453,13 @@ export class Game {
   resetToSinglePlayer() {
     this.multiplayerManager.resetToSinglePlayer();
     // ... existing reset logic ...
+  }
+
+  public setPlayerNumber(number: number) {
+    this.playerNumber = number;
+  }
+
+  public getPlayerNumber(): number {
+    return this.playerNumber;
   }
 }
