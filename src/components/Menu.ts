@@ -37,17 +37,6 @@ export class Menu {
     playButton.addEventListener('click', () => this.startGame());
     this.menuElement.appendChild(playButton);
 
-    const fullscreenButton = document.createElement('button');
-    fullscreenButton.textContent = 'Enter Fullscreen';
-    fullscreenButton.style.cssText = `
-      font-size: 20px;
-      padding: 10px 20px;
-      margin-top: 10px;
-      cursor: pointer;
-    `;
-    fullscreenButton.addEventListener('click', () => this.game.requestFullscreen());
-    this.menuElement.appendChild(fullscreenButton);
-
     const multiplayerButton = document.createElement('button');
     multiplayerButton.textContent = 'Multiplayer';
     multiplayerButton.style.cssText = `
@@ -58,6 +47,17 @@ export class Menu {
     `;
     multiplayerButton.addEventListener('click', () => this.startMultiplayerGame());
     this.menuElement.appendChild(multiplayerButton);
+
+    const fullscreenButton = document.createElement('button');
+    fullscreenButton.textContent = 'Enter Fullscreen';
+    fullscreenButton.style.cssText = `
+      font-size: 20px;
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+    `;
+    fullscreenButton.addEventListener('click', () => this.game.requestFullscreen());
+    this.menuElement.appendChild(fullscreenButton);
 
     document.body.appendChild(this.menuElement);
   }
